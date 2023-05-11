@@ -12,6 +12,8 @@ require_once(APPROOT.'core/parameters.class.inc.php');
 
 class UtilsTest extends TestCase
 {
+	private $sTempParamsFile;
+
 	public function setUp(): void
 	{
 		parent::setUp();
@@ -20,6 +22,10 @@ class UtilsTest extends TestCase
 	public function tearDown(): void
 	{
 		parent::tearDown();
+
+		if (! is_null($this->sTempParamsFile)){
+			@unlink($this->sTempParamsFile);
+		}
 		Utils::MockDoPostRequestService(null);
 
 		$reflection = new \ReflectionProperty(Utils::class, 'oConfig');
@@ -229,5 +235,16 @@ class UtilsTest extends TestCase
 		$argv[]= "--config_file=".$sXmlPath;
 		$sContent = file_get_contents($sXmlPath);
 		$this->assertEquals($sContent, Utils::DumpConfig());
+	}
+
+	public function testSaveAndRead(){
+		$this->sTempParamsFile = tempnam(sys_get_temp_dir(), 'xml_');
+		$sXmlPath = __DIR__.'/utils/params.test.xml';
+		$oParams = new \Parameters($sXmlPath);
+		$oParams->SaveToFile($this->sTempParamsFile);
+
+		$oNewParams = new \Parameters($this->sTempParamsFile);
+
+		$this->assertEquals($oParams->Get('broken_param'), $oNewParams->Get('broken_param'));
 	}
 }
